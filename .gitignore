@@ -1,0 +1,33 @@
+#mesh ana elly 3amlah :)
+
+# --- Target Directory (Maven Build Output) ---
+# This is where Maven puts compiled .class files and built jars.
+target/
+
+# --- IDE Files ---
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Visual Studio Code
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# --- OS / System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Log Files ---
+*.log
+
+# --- Local Environment / Crash dumps ---
+*.swp
+*.patch
+*.diff
+hs_err_pid*
