@@ -1,6 +1,7 @@
 package com.example;
-import com.example.Bitcask.BitcaskServer;
 import java.util.Map;
+
+import com.example.Bitcask.BitcaskServer;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -33,7 +34,7 @@ public class Main {
         // After spamming, getAll should still return everything correctly
         all = bitcask.getAll();
         System.out.println("Total keys: " + all.size());
-        all.forEach((k, v) -> System.out.println(k + " : " + v));
+        // all.forEach((k, v) -> System.out.println(k + " : " + v));
 
         bitcask.close();
     }
