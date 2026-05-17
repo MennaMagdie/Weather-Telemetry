@@ -17,7 +17,7 @@ public class Segment{
     public Segment(String directoryPath, String fileId, Boolean isNew) throws IOException{
         //this.filename = filename;
         this.fileId = fileId;
-        String filename = directoryPath + fileId + ".data";
+        String filename = directoryPath + "\\" + fileId + ".data";
         this.logFile = new RandomAccessFile(filename, "rw");
         // this.isNew = isNew;
         if(isNew){
@@ -45,20 +45,23 @@ public class Segment{
         // Order in segment [timestamp = 8 bytes][keylen = 4 bytes][valueLen = 4 bytes][key][value] according to bitcask paper
         int keySize = key.length;
         int valueSize = value.length;
-        long valueOffset = this.curentOffset + 8 + 4 + 4 + keySize;
+        // long valueOffset = this.curentOffset + Long.BYTES + Integer.BYTES*2 + keySize;
 
-        System.out.println("currentoffset before :" + this.curentOffset);
+        this.logFile.seek(this.curentOffset);
+        //System.out.println("currentoffset before :" + this.curentOffset);
         this.logFile.writeLong(timestamp);
         this.logFile.writeInt(keySize);
         this.logFile.writeInt(valueSize);
         this.logFile.write(key);
-        System.out.println("ValueOffset : " + valueOffset);
+
+        long valueOffset = logFile.getFilePointer();
         this.logFile.write(value);
         
         // then update offset 
-        this.curentOffset += 8 + 4 + 4 + keySize + valueSize; // for next record append
+        //this.curentOffset += Long.BYTES + Integer.BYTES*2 + keySize + valueSize; // for next record append
+        this.curentOffset = logFile.getFilePointer();
 
-        System.out.println("currentoffset after :" + this.curentOffset);
+        //System.out.println("currentoffset after :" + this.curentOffset);
 
         return valueOffset;  // returns valueOffset of the append that would be written in indexMap for fast retrieval of the value
     }

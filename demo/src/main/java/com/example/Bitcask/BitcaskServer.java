@@ -72,12 +72,7 @@ public class BitcaskServer{
 
 
 
-        String newId;
-        if(!server.segmentMap.isEmpty()){
-            newId = "Seg_" + (server.segmentMap.size()+1);
-        }else{
-            newId = "Seg_" + 1;
-        }
+        String newId = "Seg_" + (server.segmentMap.size() + 1);
         
         server.activeSegment = new Segment(server.directoryPath,newId,true);
         server.segmentMap.put(newId, server.activeSegment);
@@ -134,8 +129,8 @@ public class BitcaskServer{
         for (Map.Entry<String, KeyDirEntry> e : keyDir.getAll()) {
             String key      = e.getKey();
             String value = this.get(key);
-            System.out.println("key: " + key);
-            System.out.println("value : " + value);
+            //System.out.println("key: " + key);
+            //System.out.println("value : " + value);
             if (value != null) result.put(key, value);
         }
         return result;
