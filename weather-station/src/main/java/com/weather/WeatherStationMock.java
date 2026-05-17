@@ -14,7 +14,7 @@ public class WeatherStationMock {
         this.stationId = stationId;
     }
 
-    private boolean dropMessage() {
+    protected boolean dropMessage() {
         return random.nextDouble() < 0.10; 
     }
 
@@ -47,38 +47,45 @@ public class WeatherStationMock {
         );
     }
 
-    public void startSimulation() {
-        System.out.println("Starting Weather Station Mock for ID: " + this.stationId);
-        
-        while (true) {
-            try {
-                Thread.sleep(1000);
-
-                if (dropMessage()) {
-                    System.out.println("[SIMULATION] Message dropped dynamically (10% rate).");
-                    continue; 
-                }
-
-                WeatherStatusMessage message = generateMessage();
-
-                // using object mapper instead of manualy doing it 
-                // String json = "{\n" +
-                //             "  \"station_id\": " + this.stationId + ",\n" +
-                //             "  \"s_no\": " + this.sequenceNumber + "\n" +
-                //             "}";
-
-                String jsonMessage = objectMapper.writeValueAsString(message);
-                
-                System.out.println(jsonMessage);
-
-            } catch (Exception e) {
-                System.err.println("Error running simulation: " + e.getMessage());
-            }
+    public WeatherStatusMessage sendNewMessage(){
+        if (dropMessage()) {
+            System.out.println("[SIMULATION] Message dropped dynamically (10% rate).");
+            return null; 
         }
+        return generateMessage();
     }
+    // public void startSimulation() {
+        // System.out.println("Starting Weather Station Mock for ID: " + this.stationId);
+        
+        // while (true) {
+        //     try {
+        //         Thread.sleep(1000);
 
-    public static void main(String[] args) {
-        WeatherStationMock mockStation = new WeatherStationMock(1);
-        mockStation.startSimulation();
-    }
+        //         if (dropMessage()) {
+        //             System.out.println("[SIMULATION] Message dropped dynamically (10% rate).");
+        //             continue; 
+        //         }
+
+        //         WeatherStatusMessage message = generateMessage();
+
+        //         // using object mapper instead of manualy doing it 
+        //         // String json = "{\n" +
+        //         //             "  \"station_id\": " + this.stationId + ",\n" +
+        //         //             "  \"s_no\": " + this.sequenceNumber + "\n" +
+        //         //             "}";
+
+        //         String jsonMessage = objectMapper.writeValueAsString(message);
+                
+        //         System.out.println(jsonMessage);
+
+        //     } catch (Exception e) {
+        //         System.err.println("Error running simulation: " + e.getMessage());
+        //     }
+        // }
+    // }
+
+    // public static void main(String[] args) {
+    //     WeatherStationMock mockStation = new WeatherStationMock(1);
+    //     mockStation.startSimulation();
+    // }
 }
