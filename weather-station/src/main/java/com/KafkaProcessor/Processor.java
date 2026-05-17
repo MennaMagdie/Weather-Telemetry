@@ -1,5 +1,6 @@
-package com.example.KafkaProcessor;
+package com.KafkaProcessor;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.KStream;
@@ -11,17 +12,19 @@ public class Processor {
     public static void main(String[] args) {
         // Config
         Properties config = new Properties();
-        config.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-app"); // unique name for the stream app
+        config.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-app-2"); // unique name for the stream app
         config.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"); // connects the app to Kafka server
         
         // kafka msgs are treated as string (key = device, value = "weather: {humidity:...}")
         config.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         config.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
         ObjectMapper mapper = new ObjectMapper(); // to convert JSON string to structured object
 
         // Topology
         StreamsBuilder builder = new StreamsBuilder();
-        KStream<String, String> source = builder.stream("kafka"); // read from input topic
+        KStream<String, String> source = builder.stream("weather-data"); // read from input topic
         source.filter((k, v) -> {
 
             try {

@@ -1,6 +1,6 @@
 package com.weather;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Random;
 import java.time.Instant;
 
@@ -8,7 +8,7 @@ public class WeatherStationMock {
     private final long stationId;
     private long sequenceNumber = 1; 
     private final Random random = new Random();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WeatherStationMock(long stationId) {
         this.stationId = stationId;
