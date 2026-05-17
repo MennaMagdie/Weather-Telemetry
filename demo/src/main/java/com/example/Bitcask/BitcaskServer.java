@@ -69,9 +69,6 @@ public class BitcaskServer{
                 HintFile.rebuildFromDataFile(seg, server.keyDir);
             }
         }
-
-
-
         String newId = "Seg_" + (server.segmentMap.size() + 1);
         
         server.activeSegment = new Segment(server.directoryPath,newId,true);
