@@ -51,27 +51,5 @@
             <version>1.11.3</version>
         </dependency>
 
-        <!-- Hadoop (needed by Parquet internals) -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>3.3.6</version>
-            <exclusions>
-                <!-- exclude to avoid conflicts -->
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>3.3.6</version>
-        </dependency>
     </dependencies>
 </project>
