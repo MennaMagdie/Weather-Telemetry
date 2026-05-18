@@ -77,7 +77,12 @@ public class CentralStationApp {
 
                     // Operation A: Update the Bitcask Key-Value view instantly
                     bitcask.put(stationKey, rawJson);
-                    parquet.write(rawJson);
+                    try {
+                        parquet.write(rawJson);
+                    } catch (Exception e) {
+                        System.err.println("[PARQUET ERROR] " + e.getMessage());
+                        e.printStackTrace();
+                    }
 
                     // Operation B: Offer to the buffer queue for background Parquet writing
                     // boolean added = recordBuffer.offer(rawJson);
