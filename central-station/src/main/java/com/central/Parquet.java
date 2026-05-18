@@ -3,11 +3,14 @@ package com.central;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.avro.Schema;
-import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumWriter;
+import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.avro.AvroParquetWriter;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.hadoop.util.HadoopOutputFile;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,17 +98,20 @@ public class Parquet {
             File dir = new File(partitionPath);
             if (!dir.exists()) dir.mkdirs();
 
-            String filePath = partitionPath + "/" + System.currentTimeMillis() + ".avro";
+            String filePath = partitionPath + "/" + System.currentTimeMillis() + ".parquet";
             System.out.println("[PARQUET] Writing " + records.size() + " records to: " + filePath);
 
-            DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(SCHEMA);
-            try (DataFileWriter<GenericRecord> writer = new DataFileWriter<>(datumWriter)) {
-                writer.create(SCHEMA, new File(filePath));
+            Path path = new Path(filePath);
+            try (ParquetWriter<GenericRecord> writer =
+                AvroParquetWriter.<GenericRecord>builder(HadoopOutputFile.fromPath(path, new Configuration()))
+                        .withSchema(SCHEMA)
+                        .withCompressionCodec(CompressionCodecName.SNAPPY)
+                        .build()) {
+
                 for (GenericRecord record : records) {
-                    writer.append(record);
+                    writer.write(record);
                 }
-            }
-        }
+}       }
 
         buffer.clear();
         System.out.println("[PARQUET] Flush complete.");
