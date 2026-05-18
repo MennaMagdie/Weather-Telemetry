@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -18,7 +20,7 @@ import java.util.stream.Stream;
 
 /*
 Design Decisions are 
-1) the schedular compaction each how much time ?
+1) the scheduler compaction each how much time ?
 2) the max segment size then remarked full = ?
 3) hint files save what data for optimized saving and retreiving
 4) when to save - fsync files , after each write OR at closing the server -aka- closing the segment?
@@ -75,7 +77,7 @@ public class BitcaskServer{
             }
         }
 
-        // String newId = "Seg_" + System.currentTimeMillis(); // <<<<----------- could be changed to timestamp too?
+        // String newId = "Seg_" + getNewTimestamp(); // <<<<----------- could be changed to timestamp too?
         
         String newId = "Seg_" + (server.segmentMap.size() + 1);
 
@@ -83,8 +85,7 @@ public class BitcaskServer{
         server.segmentMap.put(newId, server.activeSegment);
 
 
-        // Schedule compaction every 5 minutes  <<<<---- variable
-        /*
+        // Schedule compaction every 3 minutes  <<<<---- variable
         server.scheduler = Executors.newSingleThreadScheduledExecutor();
         server.scheduler.scheduleAtFixedRate(
             () -> {
@@ -92,7 +93,8 @@ public class BitcaskServer{
                     try {
                         server.merge();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // e.printStackTrace();
+                        throw new RuntimeException("Scheduler failed to merge");
                     } finally {
                         server.mergeLock.unlock();
                     }
@@ -100,13 +102,17 @@ public class BitcaskServer{
                     System.out.println("Merge still running, skipping this interval");
                 }
             },
-            5, 5, TimeUnit.MINUTES
+            1, 3, TimeUnit.MINUTES          // intialDelay: the first run delay , period: the periodic run time
         );
-        */
             
         return server;
 
     }
+    
+    private long getNewTimestamp(){     // for all the times to be consistent
+        return System.nanoTime();
+    }
+
     // locking required only for the functions called by the client 
     public boolean put(String key, String value){
         rwLock.writeLock().lock();
@@ -115,7 +121,7 @@ public class BitcaskServer{
                 this.rotateDataSegment();
             }
 
-            long timestamp = System.currentTimeMillis();
+            long timestamp = getNewTimestamp();
             Record record = new Record(key,value,timestamp);
             long valueOffset = activeSegment.append(record);
 
@@ -189,7 +195,7 @@ public class BitcaskServer{
 
         if(oldSegments.isEmpty()) return;  // empty           
          
-        String fileId = "Seg_merged_" + System.currentTimeMillis();     // <-----------
+        String fileId = "Seg_merged_" + getNewTimestamp();     // <-----------
         Segment currentMergedSegment = new Segment(this.directoryPath, fileId , true); // the new segment creation
 
         // collect latest version of each key accross all
@@ -197,18 +203,11 @@ public class BitcaskServer{
 
         for(Segment segment : oldSegments){
             for(SegmentEntry entry : segment.scanAll()){
-                System.out.println(
-                        "SCAN: key=" + entry.getKey() +
-                        " ts=" + entry.getTimestamp() +
-                        " file=" + entry.getFileId()
-                    );
+                // System.out.println("SCAN: key=" + entry.getKey() + " ts=" + entry.getTimestamp() +" file=" + entry.getFileId());
                 SegmentEntry exists = latestEntries.get(entry.getKey());
                 if(exists == null || entry.getTimestamp() > exists.getTimestamp()){
                     latestEntries.put(entry.getKey(), entry);   // note entry contains key too
-                    System.out.println(
-                        "LATEST UPDATE: " + entry.getKey() +
-                        " -> ts=" + entry.getTimestamp()
-                    );
+                    // System.out.println("LATEST UPDATE: " + entry.getKey() + " -> ts=" + entry.getTimestamp());
                 }
             }
         }
@@ -227,25 +226,16 @@ public class BitcaskServer{
             // populate mergedSegment with the entries
             Segment source = segmentMap.get(entry.getFileId());      // does this need a readlock?
             String value = source.read(entry.getValueOffset(), entry.getValuesz());
-            System.out.println(
-                "MERGING: key=" + entry.getKey() +
-                " value=" + value +
-                " from=" + entry.getFileId()
-            );
+            //System.out.println("MERGING: key=" + entry.getKey() +" value=" + value +" from=" + entry.getFileId());
+
             Record record = new Record(entry.getKey(),value,entry.getTimestamp());
             long valueOffset = currentMergedSegment.append(record);
-            System.out.println(
-                "MERGED OFFSET: " + valueOffset +
-                " into " + currentMergedSegment.getFileId()
-            );
+            // System.out.println("MERGED OFFSET: " + valueOffset +" into " + currentMergedSegment.getFileId());
+
             // update to keyDir
             MergedKeyDirMap.put(entry.getKey(), new KeyDirEntry(currentMergedSegment.getFileId(), entry.getValuesz(), valueOffset, entry.getTimestamp()));
         
-            System.out.println(
-                "KEYDIR UPDATE: " + entry.getKey() +
-                " -> file=" + currentMergedSegment.getFileId() +
-                " offset=" + valueOffset
-            );
+            // System.out.println("KEYDIR UPDATE: " + entry.getKey() +" -> file=" + currentMergedSegment.getFileId() +" offset=" + valueOffset);
         }
 
         // close the open segment
@@ -289,13 +279,11 @@ public class BitcaskServer{
         // this.segmentMap.put(fullMergedSegment.getFileId(), fullMergedSegment);
         mergedSegments.add(fullMergedSegment);
 
-        // create hint file for it after it is closed
-       // HintFile.CreateHintFile(fullMergedSegment);         // TODO: can be running on different thread too?
-        
+        // create hint file for it after it is closed       
         try {
-            HintFile.CreateHintFile(fullMergedSegment);
-        } catch (Exception e) {
-            e.printStackTrace();
+            HintFile.CreateHintFile(fullMergedSegment); // TODO: can be running on different thread too?
+        } catch (IOException e) {
+            // e.printStackTrace();
             throw new RuntimeException("Hint creation failed", e);
         }
 
@@ -303,7 +291,7 @@ public class BitcaskServer{
 
         // create new Segment
         if(newSegment){
-            String fileId = "Seg_merged_" + System.currentTimeMillis();     // <-----------
+            String fileId = "Seg_merged_" + getNewTimestamp();     // <-----------
             Segment newMergedSegment = new Segment(this.directoryPath, fileId , true); // the new segment creation
             return newMergedSegment;
         }
@@ -316,16 +304,15 @@ public class BitcaskServer{
         try{
             for (Segment seg : segmentMap.values()) seg.sync();  
         }catch(Exception e){
-            System.err.println("Bitcask Sync Failed");
-            e.printStackTrace();
-            throw new RuntimeException("Segment sync failed - data unsafe", e);
+            // e.printStackTrace();
+            throw new RuntimeException("Bitcask Sync Failed - data unsafe", e);
         }
     }
 
     public void close() {
-        // close schedular before lock
-        // this.scheduler.shutdown();
-        /* 
+        // close scheduler before lock
+        this.scheduler.shutdown();
+        
         try {
             // wait for running merge to finish
             if (!scheduler.awaitTermination(60, TimeUnit.SECONDS)) {
@@ -333,16 +320,15 @@ public class BitcaskServer{
             }
         } catch (InterruptedException e) {
             scheduler.shutdownNow();
-        }*/
+        }
+
         this.rwLock.writeLock().lock();
         try {
             this.activeSegment.markAsFull();
             this.sync(); //     <-- sync at close , NOTE : can also be sync at every write => slower but more durable
             for (Segment seg : segmentMap.values()) seg.close();        // close the data files descriptors
         }catch(IOException e){
-            System.out.println("Closing BitCask Server Corrupted");
-            e.printStackTrace();
-            throw new RuntimeException("closing failed", e);
+            throw new RuntimeException("Closing BitCask Server Failed", e);
         }
         finally {
             this.rwLock.writeLock().unlock();

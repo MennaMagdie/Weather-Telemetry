@@ -75,8 +75,8 @@ class HintFile {
             //  keydir = key + keydirEntry[fileId, valueSize , valueOffset,  timestamp]
             // saved hint rows: [timestamp][keysz][value_sz][value_pos][key]
             try (DataInputStream inputStream =new DataInputStream(Files.newInputStream(f))) {
+                System.out.println("Loading from hint...");
                 while(inputStream.available() > 0){
-                    System.out.println("Loading from hint...");
                     long timestamp = inputStream.readLong();
                     int keysz = inputStream.readInt();
                     int valuesz = inputStream.readInt();
@@ -89,12 +89,8 @@ class HintFile {
                     KeyDirEntry existing = reKeyDir.get(key);       // check if the key was already saved before and save the latest timestamp of it
                     if (existing == null || timestamp > existing.getTimestamp()) {
                         reKeyDir.put(key, new KeyDirEntry(fileId, valuesz, valueOffset, timestamp));
-                        System.out.println("Updating KeyDir with hint files...");
-                        System.out.println(
-                            "RECOVERED: key=" + key +
-                            " file=" + fileId +
-                            " offset=" + valueOffset
-                        );
+                        // System.out.println("Updating KeyDir with hint files...");
+                        // System.out.println("RECOVERED: key=" + key + " file=" + fileId + " offset=" + valueOffset);
                     }
                 }
             }
@@ -106,7 +102,7 @@ class HintFile {
 
     static void deleteHintFile(Segment segment){
         String filepath = segment.getFilePath();
-        System.out.println("Hint Filepath in Delete : " + filepath);
+        // System.out.println("HintFilepath in Delete : " + filepath);
         File hintFile = new File(filepath +".hint");
         if (hintFile.exists()){
             boolean ok = hintFile.delete();
