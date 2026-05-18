@@ -3,13 +3,15 @@ package com.example.Bitcask;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Segment{
     // needed to create a segment , append to segment , read from segment , close segment
     // String filename;
-    //private File dataFile;
+    private final String filePath;
     private final RandomAccessFile logFile;
-    private String fileId;
+    private final String fileId;
     private long curentOffset;
     private boolean isActive;
     // boolean isNew;
@@ -17,8 +19,12 @@ public class Segment{
     public Segment(String directoryPath, String fileId, Boolean isNew) throws IOException{
         //this.filename = filename;
         this.fileId = fileId;
-        String filename = directoryPath + "\\" + fileId + ".data";
-        this.logFile = new RandomAccessFile(filename, "rw");
+        this.filePath =  directoryPath + "\\" + fileId + ".data";
+
+        String dataFilename = this.filePath + ".data";
+        // System.out.println("segment file name: " + dataFilename );
+
+        this.logFile = new RandomAccessFile(dataFilename, "rw");
         // this.isNew = isNew;
         if(isNew){
             this.curentOffset = 0; // set offset to 0 if it's a new file
@@ -66,16 +72,49 @@ public class Segment{
         return valueOffset;  // returns valueOffset of the append that would be written in indexMap for fast retrieval of the value
     }
 
+    // to scan all the entries for the fallback reading from .data files if no .hint file exist at recovery
+    public List<SegmentEntry> scanAll() throws IOException{
+
+        List<SegmentEntry> entries = new ArrayList<>();
+        this.logFile.seek(0);    // start reading from the start
+
+        // Order in segment [timestamp][keylen][valueLen][key][value]
+        while(this.logFile.getFilePointer() < this.logFile.length()){
+            long timestamp = this.logFile.readLong();
+            int keysz = this.logFile.readInt();
+            int valuesz = this.logFile.readInt();
+            
+            byte[] keyBytes = new byte[keysz];
+            this.logFile.readFully(keyBytes);
+
+            long valueOffset = this.logFile.getFilePointer();
+            this.logFile.skipBytes(valuesz);        // don't care about value, need only value offset
+
+            entries.add(new SegmentEntry(
+                timestamp,
+                keysz,
+                valuesz,
+                new String(keyBytes, StandardCharsets.UTF_8), 
+                valueOffset
+            ));
+        }
+        return entries;
+    }
+
     public void close() throws IOException{
         this.logFile.close(); // this closes the file descriptor itself
     }
 
-    public void setFull(){
+    public void markAsFull(){
         this.isActive = false;  // used to mark the file as complete
     }
 
     public long getSize(){ 
         return this.curentOffset;
+    }
+    
+    public String getFilePath() {
+        return filePath;
     }
 
     public boolean isActive() {

@@ -30,7 +30,7 @@ public class BitcaskServer{
     Segment activeSegment;
     KeyDir keyDir;      // index Map
 
-    private BitcaskServer(){}
+    private BitcaskServer(){}       // private constructor - accessed only via open method
     
     public static BitcaskServer open(String directoryPath) throws IOException{
         BitcaskServer server = new BitcaskServer();
@@ -43,6 +43,7 @@ public class BitcaskServer{
 
         Path dir = Paths.get(server.directoryPath);
 
+        // populate the segmentMap from the datafiles I have - not hint files as hint files may not exist but data files is the actual data saved
         List<Path> dataFiles = Files.list(dir)
                 .filter(p -> p.toString().endsWith(".data"))
                 .sorted(Comparator.comparingInt(p ->
@@ -59,8 +60,9 @@ public class BitcaskServer{
             Segment seg     = new Segment(server.directoryPath, fileId, false);
             server.segmentMap.put(fileId, seg);
         }
-        
-        // TODO: fill indexMap from hintfiles saved
+
+        // rebuilt index hashMap
+        server.keyDir = HintFile.rebuild(server.directoryPath);
 
         // Fallback: for any segment missing a hint file, scan the original data file
         for (Segment seg : server.segmentMap.values()) {
@@ -133,10 +135,11 @@ public class BitcaskServer{
         return result;
     }
 
+    // close data file (full segment) - create hint file - then create new data file (new segment)
     private void rotateSegment() throws IOException{
 
-        activeSegment.setFull();
-        // TODO: write to hintfile
+        activeSegment.markAsFull();
+        HintFile.CreateHintFile(activeSegment, this.keyDir);
 
         // create a new active segment
         String newId = "Seg_" + (segmentMap.size() + 1);
@@ -150,11 +153,11 @@ public class BitcaskServer{
 
         this.rwLock.writeLock().lock();
         try {
-            this.activeSegment.setFull();
-            // HintFile.write(directoryPath, activeSegment.fileId, keyDir)
+            this.activeSegment.markAsFull();
+            HintFile.CreateHintFile(this.activeSegment, this.keyDir);
             for (Segment seg : segmentMap.values()) seg.close();
         }catch(IOException e){
-            System.out.println("closing corrupted");
+            System.out.println("Closing BitCask Server Corrupted");
         }
         finally {
             this.rwLock.writeLock().unlock();
