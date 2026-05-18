@@ -1,19 +1,15 @@
 package com.central;
 
 import com.central.Bitcask.BitcaskServer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.central.Parquet;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 // import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,9 +23,10 @@ public class CentralStationApp {
     // Thread-safe buffer transferring records from Kafka to Parquet worker
     // private static final LinkedBlockingQueue<String> recordBuffer = new LinkedBlockingQueue<>(50000);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         KafkaConsumer<String, String> consumer = null;
+        Parquet parquet = null;
 
         System.out.println("LAUNCHING CENTRAL BASE STATION <3");
         try {
@@ -39,6 +36,7 @@ public class CentralStationApp {
 
             // 2. Initialize Parquet Writer / Buffer
             // samsouma hate3melha
+            parquet = new Parquet();
 
             // 3. Initialize Kafka Consumer
             // KafkaConsumer<String, String> consumer = ...
@@ -80,6 +78,7 @@ public class CentralStationApp {
 
                     // Operation A: Update the Bitcask Key-Value view instantly
                     bitcask.put(stationKey, rawJson);
+                    parquet.write(rawJson);
 
                     // Operation B: Offer to the buffer queue for background Parquet writing
                     // boolean added = recordBuffer.offer(rawJson);
@@ -113,6 +112,9 @@ public class CentralStationApp {
             if (consumer != null) {
                 System.out.println("Closing Kafka consumer network ports...");
                 consumer.close();
+            }
+            if (parquet != null) {
+                parquet.close();
             }
         }
     }
