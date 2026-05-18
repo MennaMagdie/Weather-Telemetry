@@ -3,7 +3,7 @@ import java.util.Map;
 
 import com.central.Bitcask.BitcaskServer;
 
-public class Main {
+public class testmain {
     public static void main(String[] args) throws Exception {
         
         BitcaskServer db = BitcaskServer.open("./test-data"); 

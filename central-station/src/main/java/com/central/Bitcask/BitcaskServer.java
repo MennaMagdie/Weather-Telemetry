@@ -172,7 +172,7 @@ public class BitcaskServer{
     private void rotateDataSegment() throws IOException{
 
         activeSegment.markAsFull();
-        // HintFile.CreateHintFile(activeSegment, this.keyDir);        // replaced -> hint-file only after compaction
+        // HintFile.createHintFile(activeSegment, this.keyDir);        // replaced -> hint-file only after compaction
 
         // create a new active segment
         String newId = "Seg_" + (segmentMap.size() + 1);
@@ -281,7 +281,7 @@ public class BitcaskServer{
 
         // create hint file for it after it is closed       
         try {
-            HintFile.CreateHintFile(fullMergedSegment); // TODO: can be running on different thread too?
+            HintFile.createHintFile(fullMergedSegment); // TODO: can be running on different thread too?
         } catch (IOException e) {
             // e.printStackTrace();
             throw new RuntimeException("Hint creation failed", e);
@@ -326,6 +326,7 @@ public class BitcaskServer{
         try {
             this.activeSegment.markAsFull();
             this.sync(); //     <-- sync at close , NOTE : can also be sync at every write => slower but more durable
+            HintFile.createHintFile(this.activeSegment);    // <---- do i add this or ignore the active segment and wait till the next merge?
             for (Segment seg : segmentMap.values()) seg.close();        // close the data files descriptors
         }catch(IOException e){
             throw new RuntimeException("Closing BitCask Server Failed", e);

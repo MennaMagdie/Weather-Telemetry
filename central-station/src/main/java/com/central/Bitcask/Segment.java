@@ -127,7 +127,9 @@ public class Segment{
 
     public void sync(){
         if(this.isClosed){
+            //return;
             throw new RuntimeException("Sync is done on closed segment");
+            
         }
         try {
             this.logFile.getFD().sync();    // this syncs and flushes to disk

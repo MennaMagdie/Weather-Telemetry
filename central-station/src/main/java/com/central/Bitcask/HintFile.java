@@ -22,7 +22,7 @@ class HintFile {
     // Called when a merged segment is sealed/marked as full
     // Writes a compact index alongside the .data file
     // the hint file saves rows of: [timestamp][keysz][value_sz][value_pos][key]
-    static void CreateHintFile(Segment segment) throws IOException{ 
+    static void createHintFile(Segment segment) throws IOException{ 
 
         // i have segment , take all data in it and save it in hint file
         try (DataOutputStream outputSteam = new DataOutputStream(new FileOutputStream(segment.getFilePath()+".hint"))) {
