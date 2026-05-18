@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class Parquet {
 
-    private static final int BATCH_SIZE = 10;
+    private static final int BATCH_SIZE = 10_000;
     private static final String BASE_DIR = System.getProperty("user.dir") + "/parquet-data";
     private static final ObjectMapper mapper = new ObjectMapper();
 
