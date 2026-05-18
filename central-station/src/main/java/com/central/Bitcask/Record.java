@@ -1,4 +1,4 @@
-package  com.example.Bitcask;
+package  com.central.Bitcask;
 
 public class Record {
     private String key;
