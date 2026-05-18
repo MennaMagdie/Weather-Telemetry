@@ -2,8 +2,11 @@ package com.weather;
 
 import java.util.Properties;
 
-import org.apache.kafka.clients.producer.*;
-import org.apache.kafka.common.serialization.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class WeatherStationProducer {

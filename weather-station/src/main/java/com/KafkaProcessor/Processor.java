@@ -59,7 +59,44 @@ public class Processor {
                 return false;
             }
 
-        }).to("rain-alerts");
+        })
+        .mapValues(v -> {
+
+            try {
+
+                JsonNode root = mapper.readTree(v);
+
+                int humidity =
+                    root.get("weather")
+                        .get("humidity")
+                        .asInt();
+
+                int temperature =
+                    root.get("weather")
+                        .get("temperature")
+                        .asInt();
+
+                return """
+                    {
+                        "alert": "RAIN DETECTED",
+                        "humidity": %d,
+                        "temperature": %d
+                    }
+                    """.formatted(humidity, temperature);
+
+            } catch (Exception e) {
+
+                return """
+                    {
+                        "alert": "INVALID DATA"
+                    }
+                    """;
+            }
+
+        })
+
+    .to("rain-alerts");
+        
 
         // Start
         KafkaStreams streams = new KafkaStreams(builder.build(), config); // compiles your topology into a running engine
