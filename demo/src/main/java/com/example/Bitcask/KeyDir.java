@@ -25,10 +25,6 @@ public class KeyDir{
         return this.keyDirMap.containsKey(key);
     }
 
-    int getSize(){
-        return this.keyDirMap.size();
-    }
-
     Set<HashMap.Entry<String, KeyDirEntry>> getAll() {      
         // return this.keyDirMap.entrySet();   // to return a live read only reference
         return new HashSet<>(this.keyDirMap.entrySet()); // returns a snapshot of the keyDirMap 

@@ -2,16 +2,14 @@ package com.example.Bitcask;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 /*
     for every KeyDirEntry whose fileId matches this segment:
@@ -21,26 +19,22 @@ import java.util.Map;
 
 class HintFile {
 
-    // Called when a segment is sealed/marked as full
+    // Called when a merged segment is sealed/marked as full
     // Writes a compact index alongside the .data file
     // the hint file saves rows of: [timestamp][keysz][value_sz][value_pos][key]
-    static void CreateHintFile(Segment segment,KeyDir keyDir) throws IOException{ 
-        // if entry in keyDir belong to segment , write it
+    static void CreateHintFile(Segment segment) throws IOException{ 
+
+        // i have segment , take all data in it and save it in hint file
         try (DataOutputStream outputSteam = new DataOutputStream(new FileOutputStream(segment.getFilePath()+".hint"))) {
-            // if entry in keyDir belong to segment , write it
-            for (Map.Entry<String, KeyDirEntry> e : keyDir.getAll()) {
-                String mapFileId = e.getValue().getFileId();
-                if(mapFileId == null ? segment.getFileId() == null : mapFileId.equals(segment.getFileId())){
-                    byte[] key      = e.getKey().getBytes(StandardCharsets.UTF_8);
-                    KeyDirEntry kdValue = e.getValue();
-                    
-                    outputSteam.writeLong(kdValue.getTimestamp());
-                    outputSteam.writeInt(key.length);
-                    outputSteam.writeInt(kdValue.getValueSize());
-                    outputSteam.writeLong(kdValue.getValueOffset());
-                    outputSteam.write(key);
-                }
-                
+            
+            for (SegmentEntry e : segment.scanAll()) {
+                byte[] key      = e.getKey().getBytes(StandardCharsets.UTF_8);
+                outputSteam.writeLong(e.getTimestamp());
+                outputSteam.writeInt(key.length);
+                outputSteam.writeInt(e.getValuesz());
+                outputSteam.writeLong(e.getValueOffset());
+                outputSteam.write(key);
+
             }
 
             outputSteam.flush();
@@ -70,18 +64,9 @@ class HintFile {
 
         KeyDir reKeyDir = new KeyDir();
 
-        Path dir = Paths.get(directoryPath);
-
-        List<Path> hintFiles = Files.list(dir)
-                .filter(p -> p.toString().endsWith(".data"))
-                .sorted(Comparator.comparingInt(p ->
-                        Integer.parseInt(
-                                p.getFileName().toString()
-                                        .replace("Seg_", "")
-                                        .replace(".hint", "")
-                        )
-                ))
-                .toList();
+        List<Path> hintFiles = Files.list(Paths.get(directoryPath))
+        .filter(p -> p.toString().endsWith(".hint"))
+        .toList(); 
         
         for (Path f : hintFiles) {
             String filename  = f.getFileName().toString();
@@ -89,8 +74,9 @@ class HintFile {
             
             //  keydir = key + keydirEntry[fileId, valueSize , valueOffset,  timestamp]
             // saved hint rows: [timestamp][keysz][value_sz][value_pos][key]
-            try (DataInputStream inputStream = new DataInputStream(new FileInputStream(filename))) {
+            try (DataInputStream inputStream =new DataInputStream(Files.newInputStream(f))) {
                 while(inputStream.available() > 0){
+                    System.out.println("Loading from hint...");
                     long timestamp = inputStream.readLong();
                     int keysz = inputStream.readInt();
                     int valuesz = inputStream.readInt();
@@ -103,6 +89,12 @@ class HintFile {
                     KeyDirEntry existing = reKeyDir.get(key);       // check if the key was already saved before and save the latest timestamp of it
                     if (existing == null || timestamp > existing.getTimestamp()) {
                         reKeyDir.put(key, new KeyDirEntry(fileId, valuesz, valueOffset, timestamp));
+                        System.out.println("Updating KeyDir with hint files...");
+                        System.out.println(
+                            "RECOVERED: key=" + key +
+                            " file=" + fileId +
+                            " offset=" + valueOffset
+                        );
                     }
                 }
             }
@@ -110,5 +102,15 @@ class HintFile {
         return reKeyDir;
         
         // (newer entries win — this handles the case where a key was updated across multiple segments)
+    }
+
+    static void deleteHintFile(Segment segment){
+        String filepath = segment.getFilePath();
+        System.out.println("Hint Filepath in Delete : " + filepath);
+        File hintFile = new File(filepath +".hint");
+        if (hintFile.exists()){
+            boolean ok = hintFile.delete();
+            if(!ok) throw new RuntimeException("deleting hint-file " + filepath + " failed");
+        }
     }
 }

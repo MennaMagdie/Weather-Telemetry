@@ -5,6 +5,38 @@ import com.example.Bitcask.BitcaskServer;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        
+        BitcaskServer db = BitcaskServer.open("./test-data"); 
+
+        for (int i = 0; i < 100; i++) {
+            db.put("key", "value_" + i);
+        }
+
+        db.put("user", "omnia");
+        Thread.sleep(15);
+
+        db.merge();
+
+        System.out.println("----- BEFORE CLOSING -----");
+        System.out.println(db.get("key"));
+        System.out.println(db.get("user"));
+
+        db.close();
+        
+
+        // RESTART
+        System.out.println("Restarting ....");
+        db = BitcaskServer.open("./test-data");
+
+        System.out.println(db.get("key"));
+        System.out.println(db.get("user"));
+
+        db.close();
+
+        System.out.println("-------------- Finito -------------");
+    }
+    
+    public static void main2(String[] args) throws Exception {
 
         BitcaskServer bitcask = BitcaskServer.open("./test-data");
 
