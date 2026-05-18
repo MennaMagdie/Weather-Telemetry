@@ -43,12 +43,19 @@ public class CentralStationApp {
             // 3. Initialize Kafka Consumer
             // KafkaConsumer<String, String> consumer = ...
             Properties props = new Properties();
-            String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group");
+            // String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
+            // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+            // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group");
+            // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-v3");made an error
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-" + System.currentTimeMillis());
             props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+            // props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+            // props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
 
             consumer = new KafkaConsumer<>(props);
             consumer.subscribe(Collections.singletonList(TOPIC));
@@ -62,6 +69,8 @@ public class CentralStationApp {
             while (true) {
 
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+                // System.out.println("manouna is debugging, poll completed. found records count: " + records.count());
                 
                 for (ConsumerRecord<String, String> record : records) {
                     String rawJson = record.value();

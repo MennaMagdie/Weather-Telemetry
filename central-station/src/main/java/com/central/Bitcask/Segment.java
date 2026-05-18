@@ -17,7 +17,8 @@ public class Segment{
     public Segment(String directoryPath, String fileId, Boolean isNew) throws IOException{
         //this.filename = filename;
         this.fileId = fileId;
-        String filename = directoryPath + "\\" + fileId + ".data";
+        // String filename = directoryPath + "\\" + fileId + ".data"; for Windows only
+        String filename = directoryPath + java.io.File.separator + fileId + ".data";
         this.logFile = new RandomAccessFile(filename, "rw");
         // this.isNew = isNew;
         if(isNew){
