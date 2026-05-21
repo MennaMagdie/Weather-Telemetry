@@ -1,0 +1,546 @@
+apiVersion: v1
+kind: Namespace #namespace for project deployment
+metadata:
+  name: pipeline
+---
+# kafka service:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: pipeline
+spec: # what the deployment does:
+  replicas: 1 
+  selector: 
+    matchLabels:
+      app: kafka  # any pod that has label of kafka will be managed by this deployment (kafka srvc)
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec: # specs for WHAT THE POD will be like:
+      containers:
+        - name: kafka
+          image: apache/kafka:latest
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
+          ports:
+            - containerPort: 9092
+          env:
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka-service:9092"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "1@kafka-service:9093"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/kafka-logs"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "PLAINTEXT"
+          volumeMounts:
+            - name: kafka-storage
+              mountPath: /var/kafka-logs
+      volumes:
+        - name: kafka-storage
+          persistentVolumeClaim:
+            claimName: kafka-storage
+---              
+# kafka service [the docker files or img]
+apiVersion: v1
+
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: pipeline
+spec:
+  selector:
+    app: kafka
+  ports:
+    - name: broker
+      port: 9092
+      targetPort: 9092
+    - name: controller
+      port: 9093
+      targetPort: 9093
+---
+# all 10 weather stations (check if correct)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-1
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-1
+  template:
+    metadata:
+      labels:
+        app: weather-station-1
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "1"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-2
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-2
+  template:
+    metadata:
+      labels:
+        app: weather-station-2
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "2"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-3
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-3
+  template:
+    metadata:
+      labels:
+        app: weather-station-3
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "3"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-4
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-4
+  template:
+    metadata:
+      labels:
+        app: weather-station-4
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "4"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-5
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-5
+  template:
+    metadata:
+      labels:
+        app: weather-station-5
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "5"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-6
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-6
+  template:
+    metadata:
+      labels:
+        app: weather-station-6
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "6"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-7
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-7
+  template:
+    metadata:
+      labels:
+        app: weather-station-7
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "7"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-8
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-8
+  template:
+    metadata:
+      labels:
+        app: weather-station-8
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "8"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-9
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-9
+  template:
+    metadata:
+      labels:
+        app: weather-station-9
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "9"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-10
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station-10
+  template:
+    metadata:
+      labels:
+        app: weather-station-10
+    spec:
+      containers:
+        - name: weather-station
+          image: weather-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+            limits:
+              memory: "256Mi"
+          env:
+            - name: STATION_ID
+              value: "10"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+---
+# base station + its service:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-station
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: central-station
+  template:
+    metadata:
+      labels:
+        app: central-station
+    spec:
+      containers:
+        - name: central-station
+          image: central-station:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "256Mi"
+            limits:
+              memory: "512Mi"
+          env:
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+            - name: ELASTICSEARCH_HOST
+              value: "elasticsearch-service:9200"
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /data
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-storage
+---
+# srvc for base station
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-station-service
+  namespace: pipeline
+spec:
+  selector:
+    app: central-station
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+# ElasticSearch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
+          resources:
+            requests:
+              memory: "1Gi"
+            limits:
+              memory: "2Gi"
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: xpack.security.enabled
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          ports:
+            - containerPort: 9200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-service
+  namespace: pipeline
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: elasticsearch
+      port: 9200
+      targetPort: 9200
+---
+# Kibana
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: docker.elastic.co/kibana/kibana:8.10.4
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: "http://elasticsearch-service:9200"
+          ports:
+            - containerPort: 5601
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-service
+  namespace: pipeline
+spec:
+  selector:
+    app: kibana
+  ports:
+    - name: kibana
+      port: 5601
+      targetPort: 5601
+---
+# the pvc for the parquet files (what baout bitcask?)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+  namespace: pipeline
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kafka-storage
+  namespace: pipeline
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

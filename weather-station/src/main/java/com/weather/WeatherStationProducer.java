@@ -13,7 +13,7 @@ public class WeatherStationProducer {
     // private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     // private static final long STATION_ID = 1; 
     private static final long STATION_ID = Long.parseLong(System.getenv().getOrDefault("STATION_ID", "1"));
-    private static final String BOOTSTRAP_SERVERS = System.getenv().getOrDefault("KAFKA_SERVER", "localhost:9092");
+    private static final String BOOTSTRAP_SERVERS = System.getenv().getOrDefault("KAFKA_SERVERS", "localhost:9092");
     
     private final KafkaProducer<String, String> producer;
     private final WeatherStationMock weatherStationMock;

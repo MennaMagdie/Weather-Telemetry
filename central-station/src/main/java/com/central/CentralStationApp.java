@@ -7,6 +7,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
@@ -43,7 +45,8 @@ public class CentralStationApp {
             // String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            String bootstrapServers = System.getenv().getOrDefault("KAFKA_SERVERS", "localhost:9092");
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group");
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-v3");made an error
             props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-" + System.currentTimeMillis());
@@ -79,6 +82,16 @@ public class CentralStationApp {
                     bitcask.put(stationKey, rawJson);
                     try {
                         parquet.write(rawJson);
+                        // Operation C: Send to ElasticSearch
+                        String esHost = System.getenv().getOrDefault("ELASTICSEARCH_HOST", "localhost:9200");
+                        URI uri = new URI("http://" + esHost + "/weather-data/_doc");
+                        HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+                        conn.setRequestMethod("POST");
+                        conn.setRequestProperty("Content-Type", "application/json");
+                        conn.setDoOutput(true);
+                        conn.getOutputStream().write(rawJson.getBytes());
+                        conn.getResponseCode();
+                        conn.disconnect();
                     } catch (Exception e) {
                         System.err.println("[PARQUET ERROR] " + e.getMessage());
                         e.printStackTrace();
