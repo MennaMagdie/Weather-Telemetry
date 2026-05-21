@@ -31,3 +31,12 @@ Thumbs.db
 *.patch
 *.diff
 hs_err_pid*
+
+# Kubernetes binaries
+kubectl
+kubectl.sha256
+minikube-linux-amd64
+
+# Optional: minikube state/config
+.minikube/
+kubeconfig
