@@ -16,17 +16,20 @@ public class WeatherStationProducer {
     // private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     // private static final long STATION_ID = 1; 
     private static final long STATION_ID = Long.parseLong(System.getenv().getOrDefault("STATION_ID", "1"));
-    private static final String BOOTSTRAP_SERVERS = System.getenv().getOrDefault("KAFKA_SERVER", "localhost:9092");
+    private static final String BOOTSTRAP_SERVERS = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
     
     private final KafkaProducer<String, String> producer;
     private final WeatherStationMock weatherStationMock;
     private final ObjectMapper objectMapper;
 
     public WeatherStationProducer(){
+        System.out.println("Connecting to Kafka at: " + BOOTSTRAP_SERVERS); 
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, "10000");
+        properties.put(ProducerConfig.METADATA_MAX_AGE_CONFIG, "5000");
 
         this.producer = new KafkaProducer<>(properties);
         this.weatherStationMock = new WeatherStationMock(STATION_ID); // a weather station for each ID

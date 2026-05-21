@@ -49,13 +49,19 @@ public class CentralStationApp {
             // String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            String bootstrapServers = System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+
+
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group");
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-v3");made an error
             props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-" + System.currentTimeMillis());
             props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            // props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
 
             // props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
             // props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
@@ -75,9 +81,19 @@ public class CentralStationApp {
 
                 // System.out.println("manouna is debugging, poll completed. found records count: " + records.count());
                 
+                
                 for (ConsumerRecord<String, String> record : records) {
                     String rawJson = record.value();
                     String stationKey = record.key(); // station_id passed as the partition key
+
+                    if (stationKey == null) {
+                        stationKey = "unknown_station";
+                    }
+
+                    if (rawJson == null || !rawJson.trim().startsWith("{")) {
+                        System.err.println("[PARQUET WARNING] Skipping malformed non-JSON record: " + rawJson);
+                        continue; // Skip this poison pill record completely!
+                    }
 
                     System.out.println("[INGEST] Received stream packet from Station " + stationKey);
 
