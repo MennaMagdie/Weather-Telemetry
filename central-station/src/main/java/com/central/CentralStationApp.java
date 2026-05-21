@@ -18,7 +18,7 @@ import java.util.Properties;
 public class CentralStationApp {
 
     private static final String TOPIC = "weather-data";
-    private static final String BITCASK_DIR = "./bitcask-data";
+    // private static final String BITCASK_DIR = "./bitcask-data";
     // private static final int BATCH_SIZE = 5000;
 
     // Thread-safe buffer transferring records from Kafka to Parquet worker
@@ -26,18 +26,24 @@ public class CentralStationApp {
 
     public static void main(String[] args) throws Exception {
 
+        String bitcaskDir = System.getenv("BITCASK_DATA_DIR");
+        if (bitcaskDir == null) {
+            bitcaskDir = "./bitcask-data"; 
+        }
+
         KafkaConsumer<String, String> consumer = null;
         Parquet parquet = null;
 
         System.out.println("LAUNCHING CENTRAL BASE STATION <3");
         try {
             // 1. Open Bitcask (Normal local object initialization)
-            BitcaskServer bitcask = BitcaskServer.open(BITCASK_DIR);
+            BitcaskServer bitcask = BitcaskServer.open(bitcaskDir);
             System.out.println("init bitcask storage engine");
 
             // 2. Initialize Parquet Writer / Buffer
             // samsouma hate3melha
             parquet = new Parquet();
+            System.out.println("init parquet done");
 
             // 3. Initialize Kafka Consumer
             // KafkaConsumer<String, String> consumer = ...
@@ -45,14 +51,19 @@ public class CentralStationApp {
             // String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
+            // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
             String bootstrapServers = System.getenv().getOrDefault("KAFKA_SERVERS", "localhost:9092");
             props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+
+
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group");
             // props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-v3");made an error
             props.put(ConsumerConfig.GROUP_ID_CONFIG, "central-station-group-" + System.currentTimeMillis());
             props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            // props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
 
             // props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
             // props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
@@ -72,14 +83,27 @@ public class CentralStationApp {
 
                 // System.out.println("manouna is debugging, poll completed. found records count: " + records.count());
                 
+                
                 for (ConsumerRecord<String, String> record : records) {
                     String rawJson = record.value();
                     String stationKey = record.key(); // station_id passed as the partition key
+
+                    if (stationKey == null) {
+                        stationKey = "unknown_station";
+                    }
+
+                    if (rawJson == null || !rawJson.trim().startsWith("{")) {
+                        System.err.println("[PARQUET WARNING] Skipping malformed non-JSON record: " + rawJson);
+                        continue; // Skip this poison pill record completely!
+                    }
 
                     System.out.println("[INGEST] Received stream packet from Station " + stationKey);
 
                     // Operation A: Update the Bitcask Key-Value view instantly
                     bitcask.put(stationKey, rawJson);
+                    System.out.println("[BITCASK] Stored key: " + stationKey);
+                    String readBack = bitcask.get(stationKey);
+                    System.out.println("[BITCASK] Read back for key " + stationKey + ": " + readBack);
                     try {
                         parquet.write(rawJson);
                         // Operation C: Send to ElasticSearch
@@ -97,29 +121,9 @@ public class CentralStationApp {
                         e.printStackTrace();
                     }
 
-                    // Operation B: Offer to the buffer queue for background Parquet writing
-                    // boolean added = recordBuffer.offer(rawJson);
-                    // if (!added) {
-                    //     System.err.println("[WARNING] Memory buffer full! Slowing ingestion down to preserve data integrity.");
-                    //     // Fallback to blocking write if the queue gets flooded
-                    //     recordBuffer.put(rawJson);
-                    // }
                 }
             }
-                // Read from Kafka
-                // ConsumerRecords<String, String> records = consumer.poll(...);
-                
-                // For each incoming weather message:
-                // String stationId = record.key();
-                // String jsonMessage = record.value();
 
-                // SIDE-BY-SIDE OPERATIONS:
-                
-                // Operation A: Update Bitcask for the latest view
-                // bitcask.put(stationId, jsonMessage); 
-                
-                // Operation B: Append to Parquet for historical logging
-                // parquetArchiver.write(jsonMessage);
 
         } catch (Exception e) {
             System.err.println("Error running ingestion worker: " + e.getMessage());

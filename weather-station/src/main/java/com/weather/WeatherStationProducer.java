@@ -2,8 +2,11 @@ package com.weather;
 
 import java.util.Properties;
 
-import org.apache.kafka.clients.producer.*;
-import org.apache.kafka.common.serialization.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class WeatherStationProducer {
@@ -20,10 +23,13 @@ public class WeatherStationProducer {
     private final ObjectMapper objectMapper;
 
     public WeatherStationProducer(){
+        System.out.println("Connecting to Kafka at: " + BOOTSTRAP_SERVERS); 
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, "10000");
+        properties.put(ProducerConfig.METADATA_MAX_AGE_CONFIG, "5000");
 
         this.producer = new KafkaProducer<>(properties);
         this.weatherStationMock = new WeatherStationMock(STATION_ID); // a weather station for each ID

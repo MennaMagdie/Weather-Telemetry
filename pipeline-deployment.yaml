@@ -409,6 +409,8 @@ spec:
               value: "kafka-service:9092"
             - name: ELASTICSEARCH_HOST
               value: "elasticsearch-service:9200"
+            - name: BITCASK_DATA_DIR
+              value: "/data/bitcask-data"
           volumeMounts:
             - name: shared-storage
               mountPath: /data
