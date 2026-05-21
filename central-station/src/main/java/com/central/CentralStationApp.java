@@ -16,7 +16,7 @@ import java.util.Properties;
 public class CentralStationApp {
 
     private static final String TOPIC = "weather-data";
-    private static final String BITCASK_DIR = "./bitcask-data";
+    // private static final String BITCASK_DIR = "./bitcask-data";
     // private static final int BATCH_SIZE = 5000;
 
     // Thread-safe buffer transferring records from Kafka to Parquet worker
@@ -24,18 +24,24 @@ public class CentralStationApp {
 
     public static void main(String[] args) throws Exception {
 
+        String bitcaskDir = System.getenv("BITCASK_DATA_DIR");
+        if (bitcaskDir == null) {
+            bitcaskDir = "./bitcask-data"; 
+        }
+
         KafkaConsumer<String, String> consumer = null;
         Parquet parquet = null;
 
         System.out.println("LAUNCHING CENTRAL BASE STATION <3");
         try {
             // 1. Open Bitcask (Normal local object initialization)
-            BitcaskServer bitcask = BitcaskServer.open(BITCASK_DIR);
+            BitcaskServer bitcask = BitcaskServer.open(bitcaskDir);
             System.out.println("init bitcask storage engine");
 
             // 2. Initialize Parquet Writer / Buffer
             // samsouma hate3melha
             parquet = new Parquet();
+            System.out.println("init parquet done");
 
             // 3. Initialize Kafka Consumer
             // KafkaConsumer<String, String> consumer = ...
@@ -77,6 +83,9 @@ public class CentralStationApp {
 
                     // Operation A: Update the Bitcask Key-Value view instantly
                     bitcask.put(stationKey, rawJson);
+                    System.out.println("[BITCASK] Stored key: " + stationKey);
+                    String readBack = bitcask.get(stationKey);
+                    System.out.println("[BITCASK] Read back for key " + stationKey + ": " + readBack);
                     try {
                         parquet.write(rawJson);
                     } catch (Exception e) {
@@ -84,29 +93,9 @@ public class CentralStationApp {
                         e.printStackTrace();
                     }
 
-                    // Operation B: Offer to the buffer queue for background Parquet writing
-                    // boolean added = recordBuffer.offer(rawJson);
-                    // if (!added) {
-                    //     System.err.println("[WARNING] Memory buffer full! Slowing ingestion down to preserve data integrity.");
-                    //     // Fallback to blocking write if the queue gets flooded
-                    //     recordBuffer.put(rawJson);
-                    // }
                 }
             }
-                // Read from Kafka
-                // ConsumerRecords<String, String> records = consumer.poll(...);
-                
-                // For each incoming weather message:
-                // String stationId = record.key();
-                // String jsonMessage = record.value();
 
-                // SIDE-BY-SIDE OPERATIONS:
-                
-                // Operation A: Update Bitcask for the latest view
-                // bitcask.put(stationId, jsonMessage); 
-                
-                // Operation B: Append to Parquet for historical logging
-                // parquetArchiver.write(jsonMessage);
 
         } catch (Exception e) {
             System.err.println("Error running ingestion worker: " + e.getMessage());

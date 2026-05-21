@@ -81,32 +81,31 @@ public class BitcaskServer{
         
         String newId = "Seg_" + (server.segmentMap.size() + 1);
 
-        server.activeSegment = new Segment(server.directoryPath,newId,true);
+        server.activeSegment = new Segment(server.directoryPath, newId, true);
         server.segmentMap.put(newId, server.activeSegment);
 
-
-        // Schedule compaction every 3 minutes  <<<<---- variable
+        // INSTANTIATE AND START THE SCHEDULER AT THE ABSOLUTE END
         server.scheduler = Executors.newSingleThreadScheduledExecutor();
         server.scheduler.scheduleAtFixedRate(
             () -> {
-                if (server.mergeLock.tryLock()) {  // skip if already merging
-                    try {
-                        server.merge();
-                    } catch (IOException e) {
-                        // e.printStackTrace();
-                        throw new RuntimeException("Scheduler failed to merge");
-                    } finally {
-                        server.mergeLock.unlock();
+                try {
+                    if (server.mergeLock.tryLock()) { 
+                        try {
+                            server.merge();
+                        } catch (IOException e) {
+                            System.err.println("Compaction merge failed: " + e.getMessage());
+                        } finally {
+                            server.mergeLock.unlock();
+                        }
                     }
-                } else {
-                    System.out.println("Merge still running, skipping this interval");
+                } catch (Exception e) {
+                    System.err.println("Scheduler task encountered an error: " + e.getMessage());
                 }
             },
-            1, 3, TimeUnit.MINUTES          // intialDelay: the first run delay , period: the periodic run time
+            3, 3, TimeUnit.MINUTES // Changed initial delay to 3 mins to give system time to breathe at startup!
         );
             
         return server;
-
     }
     
     private long getNewTimestamp(){     // for all the times to be consistent

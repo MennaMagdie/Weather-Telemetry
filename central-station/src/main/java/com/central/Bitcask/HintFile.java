@@ -74,24 +74,30 @@ class HintFile {
             
             //  keydir = key + keydirEntry[fileId, valueSize , valueOffset,  timestamp]
             // saved hint rows: [timestamp][keysz][value_sz][value_pos][key]
-            try (DataInputStream inputStream =new DataInputStream(Files.newInputStream(f))) {
-                System.out.println("Loading from hint...");
-                while(inputStream.available() > 0){
-                    long timestamp = inputStream.readLong();
-                    int keysz = inputStream.readInt();
-                    int valuesz = inputStream.readInt();
-                    long valueOffset = inputStream.readLong();
-                    byte[] keyBytes    = new byte[keysz];
-                    inputStream.readFully(keyBytes);
+            // Saved hint rows: [timestamp][keysz][value_sz][value_pos][key]
+            try (DataInputStream inputStream = new DataInputStream(Files.newInputStream(f))) {
+                System.out.println("Loading from hint file: " + filename);
+                
+                try {
+                    while (true) { // Loop indefinitely until EOFException drops us out safely
+                        long timestamp = inputStream.readLong();
+                        int keysz = inputStream.readInt();
+                        int valuesz = inputStream.readInt();
+                        long valueOffset = inputStream.readLong();
+                        
+                        byte[] keyBytes = new byte[keysz];
+                        inputStream.readFully(keyBytes);
 
-                    String key = new String(keyBytes, StandardCharsets.UTF_8);
+                        String key = new String(keyBytes, StandardCharsets.UTF_8);
 
-                    KeyDirEntry existing = reKeyDir.get(key);       // check if the key was already saved before and save the latest timestamp of it
-                    if (existing == null || timestamp > existing.getTimestamp()) {
-                        reKeyDir.put(key, new KeyDirEntry(fileId, valuesz, valueOffset, timestamp));
-                        // System.out.println("Updating KeyDir with hint files...");
-                        // System.out.println("RECOVERED: key=" + key + " file=" + fileId + " offset=" + valueOffset);
+                        KeyDirEntry existing = reKeyDir.get(key); 
+                        if (existing == null || timestamp > existing.getTimestamp()) {
+                            reKeyDir.put(key, new KeyDirEntry(fileId, valuesz, valueOffset, timestamp));
+                        }
                     }
+                } catch (java.io.EOFException e) {
+                    // This is expected and normal! It means we cleanly read every single byte of the hint file.
+                    System.out.println("Successfully finished parsing hint file: " + filename);
                 }
             }
         }

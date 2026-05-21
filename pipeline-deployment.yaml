@@ -1,0 +1,438 @@
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: pipeline
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: shared-storage
+#   namespace: pipeline
+# spec:
+#   accessModes:
+#     - ReadWriteOnce  # Minikube standard default single-node storage layout
+#   resources:
+#     requests:
+#       storage: 1Gi   # Scaled down to prevent Disk Pressure locks on your drive
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: kafka
+#   namespace: pipeline
+# spec:
+#   replicas: 1 
+#   selector: 
+#     matchLabels:
+#       app: kafka 
+#   template:
+#     metadata:
+#       labels:
+#         app: kafka
+#     spec:
+#       containers:
+#         - name: kafka
+#           image: apache/kafka:3.9.0 # Explicitly pinned image tag instead of unpredictable 'latest'
+#           ports:
+#             - containerPort: 9092
+#           env:
+#             - name: KAFKA_NODE_ID
+#               value: "1"
+#             - name: KAFKA_PROCESS_ROLES
+#               value: "broker,controller"
+#             - name: KAFKA_LISTENERS
+#               value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+#             - name: KAFKA_ADVERTISED_LISTENERS
+#               value: "PLAINTEXT://kafka-service:9092"
+#             - name: KAFKA_CONTROLLER_LISTENER_NAMES
+#               value: "CONTROLLER"
+#             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+#               value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+#             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+#               value: "1@127.0.0.1:9093" # FIXED: Bypasses internal loopback socket trap
+#             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+#               value: "1"
+#             - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+#               value: "1"
+#             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+#               value: "1"
+#             - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+#               value: "true"
+# ---              
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kafka-service
+#   namespace: pipeline
+# spec:
+#   selector:
+#     app: kafka
+#   ports:
+#     - port: 9092
+#       targetPort: 9092
+# ---
+# # Weather Station deployment with all 10 replicas in ONE declaration 
+# # apiVersion: apps/v1
+# # kind: Deployment
+# # metadata:
+# #   name: weather-stations
+# #   namespace: pipeline
+# # spec:
+# #   replicas: 10 # FIXED: Cleaner design pattern than copying the code blocks 10 separate times!
+# #   selector:
+# #     matchLabels:
+# #       app: weather-station
+# #   template:
+# #     metadata:
+# #       labels:
+# #         app: weather-station
+# #     spec:
+# #       containers:
+# #         - name: weather-station
+# #           image: weather-station:latest
+# #           imagePullPolicy: Never
+# #           env:
+# #             - name: KAFKA_BOOTSTRAP_SERVERS
+# #               value: "kafka-service:9092"
+
+# # ==========================================
+# # 10 INDIVIDUAL WEATHER STATION SIMULATORS
+# # ==========================================
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-1
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-1
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-1
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "1"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-2
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-2
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-2
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "2"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-3
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-3
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-3
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "3"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-4
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-4
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-4
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "4"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-5
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-5
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-5
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "5"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-6
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-6
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-6
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "6"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-7
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-7
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-7
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "7"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-8
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-8
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-8
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "8"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-9
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-9
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-9
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "9"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: weather-station-10
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: weather-station-10
+#   template:
+#     metadata:
+#       labels:
+#         app: weather-station-10
+#     spec:
+#       containers:
+#         - name: weather-station
+#           image: weather-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: STATION_ID
+#               value: "10"
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+              
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: central-station
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: central-station
+#   template:
+#     metadata:
+#       labels:
+#         app: central-station
+#     spec:
+#       containers:
+#         - name: central-station
+#           image: central-station:latest
+#           imagePullPolicy: Never
+#           env:
+#             - name: KAFKA_SERVER
+#               value: "kafka-service:9092"
+#             - name: ELASTICSEARCH_HOST
+#               value: "elasticsearch-service:9200"
+#             - name: BITCASK_DATA_DIR
+#               value: "/data/bitcask-data" # Path setting variable passed to Java to make Bitcask persistent
+#           volumeMounts:
+#             - name: shared-storage
+#               mountPath: /data
+#       volumes:
+#         - name: shared-storage
+#           persistentVolumeClaim:
+#             claimName: shared-storage
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: central-station-service
+#   namespace: pipeline
+# spec:
+#   selector:
+#     app: central-station
+#   ports:
+#     - port: 8080
+#       targetPort: 8080
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: elasticsearch-kibana
+#   namespace: pipeline
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: elasticsearch-kibana
+#   template:
+#     metadata:
+#       labels:
+#         app: elasticsearch-kibana
+#     spec:
+#       containers:
+#         - name: elasticsearch-kibana
+#           image: nshou/elasticsearch-kibana
+#           ports:
+#             - containerPort: 9200
+#             - containerPort: 5601
+#           env:
+#             - name: SSL_MODE
+#               value: "false"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: elasticsearch-service
+#   namespace: pipeline
+# spec:
+#   selector:
+#     app: elasticsearch-kibana
+#   ports:
+#     - name: elasticsearch
+#       port: 9200
+#       targetPort: 9200
+#     - name: kibana
+#       port: 5601
+#       targetPort: 5601
