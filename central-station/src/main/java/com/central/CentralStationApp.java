@@ -1,11 +1,12 @@
 package com.central;
 
-import com.central.Bitcask.BitcaskServer;
-
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpExchange;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+// import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -13,11 +14,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
-// import java.util.concurrent.LinkedBlockingQueue;
+import com.central.Bitcask.BitcaskServer;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 
 
 public class CentralStationApp {
@@ -157,7 +156,8 @@ public class CentralStationApp {
                     }
 
                     if (rawJson == null || !rawJson.trim().startsWith("{")) {
-                        System.err.println("[PARQUET WARNING] Skipping malformed non-JSON record: " + rawJson);
+                        System.err.println("[INVALID-MESSAGE CHANNEL] Routing poison pill (Skipping malformed non-JSON record): " + rawJson);
+                        // System.err.println("[PARQUET WARNING] Skipping malformed non-JSON record: " + rawJson);
                         continue; // Skip this poison pill record completely!
                     }
 
