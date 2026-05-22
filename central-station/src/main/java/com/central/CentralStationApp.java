@@ -1,6 +1,12 @@
 package com.central;
 
 import com.central.Bitcask.BitcaskServer;
+
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpExchange;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -9,6 +15,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 // import java.util.concurrent.LinkedBlockingQueue;
 
@@ -43,8 +50,67 @@ public class CentralStationApp {
             parquet = new Parquet();
             System.out.println("init parquet done");
 
-            // 3. Initialize Kafka Consumer
-            // KafkaConsumer<String, String> consumer = ...
+            // 3. HTTP Server on port 808
+            HttpServer httpServer = HttpServer.create(new InetSocketAddress(8080), 0);
+
+            // GET /bitcask/all
+            httpServer.createContext("/bitcask/all", (HttpExchange exchange) -> {
+                try {
+                    Map<String, String> all = bitcask.getAll();
+                    StringBuilder json = new StringBuilder("{");
+                    boolean first = true;
+                    for (Map.Entry<String, String> entry : all.entrySet()) {
+                        if (!first) json.append(",");
+                        json.append("\"").append(entry.getKey()).append("\":")
+                            .append(entry.getValue());
+                        first = false;
+                    }
+                    json.append("}");
+                    byte[] response = json.toString().getBytes();
+                    exchange.sendResponseHeaders(200, response.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response);
+                    }
+                } catch (Exception e) {
+                    byte[] err = e.getMessage().getBytes();
+                    exchange.sendResponseHeaders(500, err.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(err);
+                    }
+                }
+            });
+
+            // GET /bitcask/key/{key}
+            httpServer.createContext("/bitcask/key/", (HttpExchange exchange) -> {
+                try {
+                    String path = exchange.getRequestURI().getPath();
+                    String key = path.substring("/bitcask/key/".length());
+                    String value = bitcask.get(key);
+                    byte[] response;
+                    if (value == null) {
+                        response = "NOT FOUND".getBytes();
+                        exchange.sendResponseHeaders(404, response.length);
+                    } else {
+                        response = value.getBytes();
+                        exchange.sendResponseHeaders(200, response.length);
+                    }
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response);
+                    }
+                } catch (Exception e) {
+                    byte[] err = e.getMessage().getBytes();
+                    exchange.sendResponseHeaders(500, err.length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(err);
+                    }
+                }
+            });
+
+            httpServer.start();
+            System.out.println("[HTTP] Server started on port 8080");
+
+
+            // 3.  Kafka Consumer
             Properties props = new Properties();
             // String bootstrapServers= System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "127.0.0.1:9092");
             // props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
