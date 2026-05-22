@@ -379,6 +379,30 @@ spec:
             - name: KAFKA_SERVERS
               value: "kafka-service:9092"
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-meteo-adapter
+  namespace: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-meteo-adapter
+  template:
+    metadata:
+      labels:
+        app: open-meteo-adapter
+    spec:
+      containers:
+        - name: open-meteo-adapter
+          image: weather-station:latest 
+          imagePullPolicy: Never
+          env:
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+          command: ["java", "-cp", "app.jar", "com.weather.OpenMeteoStationAdapter"]
+---
 # base station + its service:
 apiVersion: apps/v1
 kind: Deployment
@@ -451,6 +475,7 @@ spec:
       containers:
         - name: elasticsearch
           image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
+          imagePullPolicy: IfNotPresent
           resources:
             requests:
               memory: "1Gi"
