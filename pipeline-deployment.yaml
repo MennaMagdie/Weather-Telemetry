@@ -71,34 +71,6 @@ spec:
     - port: 9092
       targetPort: 9092
 ---
-# Weather Station deployment with all 10 replicas in ONE declaration 
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: weather-stations
-#   namespace: pipeline
-# spec:
-#   replicas: 10 # FIXED: Cleaner design pattern than copying the code blocks 10 separate times!
-#   selector:
-#     matchLabels:
-#       app: weather-station
-#   template:
-#     metadata:
-#       labels:
-#         app: weather-station
-#     spec:
-#       containers:
-#         - name: weather-station
-#           image: weather-station:latest
-#           imagePullPolicy: Never
-#           env:
-#             - name: KAFKA_BOOTSTRAP_SERVERS
-#               value: "kafka-service:9092"
-
-# ==========================================
-# 10 INDIVIDUAL WEATHER STATION SIMULATORS
-# ==========================================
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

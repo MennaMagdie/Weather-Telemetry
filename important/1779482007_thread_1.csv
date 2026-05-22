@@ -1,0 +1,11 @@
+key,value
+1,{"station_id": 1, "s_no": 27683, "battery_status": "high", "status_timestamp": 1779482009, "weather": {"humidity": 59, "temperature": 84, "wind_speed": 226}}
+2,{"station_id": 2, "s_no": 27688, "battery_status": "medium", "status_timestamp": 1779482009, "weather": {"humidity": 27, "temperature": 59, "wind_speed": 247}}
+3,{"station_id": 3, "s_no": 27681, "battery_status": "medium", "status_timestamp": 1779482009, "weather": {"humidity": 95, "temperature": 82, "wind_speed": 62}}
+4,{"station_id": 4, "s_no": 27686, "battery_status": "medium", "status_timestamp": 1779482009, "weather": {"humidity": 28, "temperature": 84, "wind_speed": 99}}
+5,{"station_id": 5, "s_no": 27686, "battery_status": "high", "status_timestamp": 1779482009, "weather": {"humidity": 91, "temperature": 84, "wind_speed": 12}}
+6,{"station_id": 6, "s_no": 27685, "battery_status": "low", "status_timestamp": 1779482009, "weather": {"humidity": 21, "temperature": 62, "wind_speed": 203}}
+7,{"station_id": 7, "s_no": 27677, "battery_status": "medium", "status_timestamp": 1779482009, "weather": {"humidity": 48, "temperature": 55, "wind_speed": 47}}
+8,{"station_id": 8, "s_no": 27680, "battery_status": "high", "status_timestamp": 1779482009, "weather": {"humidity": 18, "temperature": 90, "wind_speed": 21}}
+9,{"station_id": 9, "s_no": 27683, "battery_status": "medium", "status_timestamp": 1779482009, "weather": {"humidity": 34, "temperature": 40, "wind_speed": 206}}
+10,{"station_id": 10, "s_no": 27686, "battery_status": "low", "status_timestamp": 1779482009, "weather": {"humidity": 78, "temperature": 115, "wind_speed": 22}}
