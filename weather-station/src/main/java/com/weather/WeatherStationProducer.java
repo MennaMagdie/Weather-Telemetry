@@ -5,6 +5,7 @@ import java.util.Properties;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.requests.ProduceRequest;
 import org.apache.kafka.common.serialization.StringSerializer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +20,7 @@ public class WeatherStationProducer {
     private static final String BOOTSTRAP_SERVERS = System.getenv().getOrDefault("KAFKA_SERVERS", "localhost:9092");
     
     private final KafkaProducer<String, String> producer;
-    private final WeatherStationMock weatherStationMock;
+   //  private final WeatherStationMock weatherStationMock;
     private final ObjectMapper objectMapper;
 
     public WeatherStationProducer(){
@@ -32,34 +33,38 @@ public class WeatherStationProducer {
         properties.put(ProducerConfig.METADATA_MAX_AGE_CONFIG, "5000");
 
         this.producer = new KafkaProducer<>(properties);
-        this.weatherStationMock = new WeatherStationMock(STATION_ID); // a weather station for each ID
+        // this.weatherStationMock = new WeatherStationMock(STATION_ID); // a weather station for each ID
         this.objectMapper = new ObjectMapper();
     }
 
+    public void sendMessages(WeatherStatusMessage weatherMsg){
+        try{
+            String jsonWeatherMsg = objectMapper.writeValueAsString(weatherMsg);
+            ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, Long.toString(weatherMsg.getStation_id()), jsonWeatherMsg);
+            producer.send(record, (metadata, ex) -> {
+                if(ex!=null){
+                    System.err.println("Failed to send message: " + ex.getMessage());
+                } else{
+                    System.out.println("Message from station " + weatherMsg.getStation_id() + " sent to topic " + metadata.topic() + " partition " + metadata.partition() + " offset " + metadata.offset());
+                }
+            });
+
+        } catch (Exception e) {
+            System.err.println("Error producing message: " + e.getMessage());
+        }
+    }
     public void produceMessages(){
         // unique per object??
-        
-        while (true) {
+        while(true){
             try {
-                Thread.sleep(1000); // send msgs each second
-
-                WeatherStatusMessage weatherMsg = weatherStationMock.generateMessage();
-
-                if(weatherMsg == null){
-                    continue; // dropped msg
+                WeatherStatusMessage weatherMsg = new WeatherStationMock(STATION_ID).sendNewMessage();
+                if(weatherMsg != null){
+                    sendMessages(weatherMsg);
                 }
-                String jsonWeatherMsg = objectMapper.writeValueAsString(weatherMsg);
-
-                ProducerRecord<String, String> record = new ProducerRecord<>(TOPIC, Long.toString(weatherMsg.getStation_id()), jsonWeatherMsg);
-                producer.send(record, (metadata, ex) -> {
-                    if(ex!=null){
-                        System.err.println("Failed to send message: " + ex.getMessage());
-                    } else{
-                        System.out.println("Message from" + STATION_ID + "sent to topic " + metadata.topic() + " partition " + metadata.partition() + " offset " + metadata.offset());
-                    }
-                });
-            } catch (Exception e) {
-                System.err.println("Error producing message: " + e.getMessage());
+                Thread.sleep(1000); // 1 sec bw msgs
+            } catch (InterruptedException e) {
+                System.err.println("Producer interrupted: " + e.getMessage());
+                break;
             }
         }
     }
