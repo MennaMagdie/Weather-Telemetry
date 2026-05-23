@@ -102,7 +102,7 @@ public class BitcaskServer{
                     System.err.println("Scheduler task encountered an error: " + e.getMessage());
                 }
             },
-            3, 3, TimeUnit.MINUTES // Changed initial delay to 3 mins to give system time to breathe at startup!
+            1, 1, TimeUnit.MINUTES // Changed initial delay to 3 mins to give system time to breathe at startup!
         );
             
         return server;

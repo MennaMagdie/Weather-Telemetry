@@ -10,10 +10,13 @@ public class WeatherStatusMessage {
     public WeatherStatusMessage() {}
 
     public WeatherStatusMessage(long station_id, long s_no, String battery_status, long status_timestamp, WeatherDetails weather) {
+        // THESE ARE THE ENVELOPE METADATA
         this.station_id = station_id;
         this.s_no = s_no;
         this.battery_status = battery_status;
         this.status_timestamp = status_timestamp;
+
+        //THIS IS THE PAYLOAD
         this.weather = weather;
     }
 
